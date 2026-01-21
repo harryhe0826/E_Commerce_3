@@ -208,7 +208,7 @@ async function generateWithGemini(
 	// 如果有源图，先添加图片
 	if (sourceImageBase64) {
 		const matches = sourceImageBase64.match(/^data:([^;]+);base64,(.+)$/)
-		if (matches) {
+		if (matches && matches[1] && matches[2]) {
 			parts.push({
 				inline_data: {
 					mime_type: matches[1],
