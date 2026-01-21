@@ -140,12 +140,13 @@ export async function exportVideoWithFrames(
 
 		onProgress?.(20, '正在处理图片...')
 
-		// 写入所有图片文件
-		for (let i = 0; i < sortedFrames.length; i++) {
-			const frame = sortedFrames[i]
-			const imageBytes = base64ToUint8Array(frame.imageData)
-			await ff.writeFile(`frame_${i}.jpg`, imageBytes)
-		}
+	// 写入所有图片文件
+	for (let i = 0; i < sortedFrames.length; i++) {
+		const frame = sortedFrames[i]
+		if (!frame) continue
+		const imageBytes = base64ToUint8Array(frame.imageData)
+		await ff.writeFile(`frame_${i}.jpg`, imageBytes)
+	}
 
 		onProgress?.(30, '正在分析视频...')
 
@@ -169,13 +170,14 @@ export async function exportVideoWithFrames(
 		const targetWidth = videoWidth || 1280
 		const targetHeight = videoHeight || 720
 
-		for (let i = 0; i < sortedFrames.length; i++) {
-			const frame = sortedFrames[i]
-			const frameTime = frame.timestamp
-			const frameDuration = frame.duration || imageDuration
+	for (let i = 0; i < sortedFrames.length; i++) {
+		const frame = sortedFrames[i]
+		if (!frame) continue
+		const frameTime = frame.timestamp
+		const frameDuration = frame.duration || imageDuration
 
-			// 1. 原视频片段：从 lastTime 到 frameTime
-			if (frameTime > lastTime) {
+		// 1. 原视频片段：从 lastTime 到 frameTime
+		if (frameTime > lastTime) {
 				filterParts.push(
 					`[0:v]trim=start=${lastTime}:end=${frameTime},setpts=PTS-STARTPTS[v${streamIndex}]`
 				)
@@ -247,9 +249,10 @@ export async function exportVideoWithFrames(
 
 		onProgress?.(90, '正在生成输出文件...')
 
-		// 读取输出文件
-		const outputData = await ff.readFile(outputFileName)
-		const outputBlob = new Blob([outputData], { type: 'video/mp4' })
+	// 读取输出文件
+	const outputData = await ff.readFile(outputFileName)
+	const uint8Array = new Uint8Array(outputData as Uint8Array)
+	const outputBlob = new Blob([uint8Array], { type: 'video/mp4' })
 
 		// 清理临时文件
 		await ff.deleteFile('input.mp4')
@@ -309,12 +312,13 @@ export async function exportVideoSimple(
 		// 先探测视频获取分辨率
 		await ff.exec(['-i', 'input.mp4', '-f', 'null', '-'])
 
-		onProgress?.(30, '正在处理图片...')
-		for (let i = 0; i < sortedFrames.length; i++) {
-			const frame = sortedFrames[i]
-			const imageBytes = base64ToUint8Array(frame.imageData)
-			await ff.writeFile(`img_${i}.jpg`, imageBytes)
-		}
+	onProgress?.(30, '正在处理图片...')
+	for (let i = 0; i < sortedFrames.length; i++) {
+		const frame = sortedFrames[i]
+		if (!frame) continue
+		const imageBytes = base64ToUint8Array(frame.imageData)
+		await ff.writeFile(`img_${i}.jpg`, imageBytes)
+	}
 
 		onProgress?.(40, '正在分割视频片段...')
 
@@ -327,14 +331,15 @@ export async function exportVideoSimple(
 		const targetWidth = videoWidth || 1280
 		const targetHeight = videoHeight || 720
 
-		// 生成视频分割片段和图片视频片段
-		for (let i = 0; i < sortedFrames.length; i++) {
-			const frame = sortedFrames[i]
-			const frameTime = frame.timestamp
-			const frameDuration = frame.duration || imageDuration
+	// 生成视频分割片段和图片视频片段
+	for (let i = 0; i < sortedFrames.length; i++) {
+		const frame = sortedFrames[i]
+		if (!frame) continue
+		const frameTime = frame.timestamp
+		const frameDuration = frame.duration || imageDuration
 
-			// 1. 如果当前时间点大于上次切割点，先输出视频片段
-			if (frameTime > lastCutTime) {
+		// 1. 如果当前时间点大于上次切割点，先输出视频片段
+		if (frameTime > lastCutTime) {
 				const segmentName = `seg_v${i}.mp4`
 				await ff.exec([
 					'-i', 'input.mp4',
@@ -417,10 +422,11 @@ export async function exportVideoSimple(
 			outputFileName,
 		])
 
-		onProgress?.(90, '正在生成文件...')
+	onProgress?.(90, '正在生成文件...')
 
-		const outputData = await ff.readFile(outputFileName)
-		const outputBlob = new Blob([outputData], { type: 'video/mp4' })
+	const outputData = await ff.readFile(outputFileName)
+	const uint8Array = new Uint8Array(outputData as Uint8Array)
+	const outputBlob = new Blob([uint8Array], { type: 'video/mp4' })
 
 		// 清理临时文件
 		await ff.deleteFile('input.mp4')
